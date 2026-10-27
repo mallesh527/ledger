@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { Button, Input, Select } from './UI';
-import { ArrowUpRight, ArrowDownLeft, Calendar, FileText, IndianRupee } from 'lucide-react';
-import type { Person } from '../types';
+import { useTheme } from '../context/ThemeContext';
+import { ArrowUpRight, ArrowDownLeft, Calendar, FileText, Pencil } from 'lucide-react';
+import type { Person, Transaction } from '../types';
 
 interface AddTransactionModalProps {
   isOpen: boolean;
@@ -11,7 +12,9 @@ interface AddTransactionModalProps {
   categories: string[];
   initialPersonId?: string | null;
   initialType?: 'given' | 'received';
+  transactionToEdit?: Transaction | null;
   onSubmit: (data: {
+    id?: string;
     personId: string;
     type: 'given' | 'received';
     amount: number;
@@ -28,8 +31,11 @@ export function AddTransactionModal({
   categories,
   initialPersonId,
   initialType = 'given',
+  transactionToEdit,
   onSubmit,
 }: AddTransactionModalProps) {
+  const { currency } = useTheme();
+
   const [personId, setPersonId] = useState('');
   const [type, setType] = useState<'given' | 'received'>('given');
   const [amount, setAmount] = useState('');
@@ -41,15 +47,24 @@ export function AddTransactionModal({
 
   useEffect(() => {
     if (isOpen) {
-      setPersonId(initialPersonId || people[0]?.id || '');
-      setType(initialType);
-      setAmount('');
-      setCategory(categories[0] || 'Food & Dining');
-      setDescription('');
-      setDate(new Date().toISOString().split('T')[0]);
+      if (transactionToEdit) {
+        setPersonId(transactionToEdit.personId);
+        setType(transactionToEdit.type);
+        setAmount(transactionToEdit.amount.toString());
+        setCategory(transactionToEdit.category);
+        setDescription(transactionToEdit.description || '');
+        setDate(transactionToEdit.date);
+      } else {
+        setPersonId(initialPersonId || people[0]?.id || '');
+        setType(initialType);
+        setAmount('');
+        setCategory(categories[0] || 'Food & Dining');
+        setDescription('');
+        setDate(new Date().toISOString().split('T')[0]);
+      }
       setErrors({});
     }
-  }, [isOpen, people, categories, initialPersonId, initialType]);
+  }, [isOpen, people, categories, initialPersonId, initialType, transactionToEdit]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -67,6 +82,7 @@ export function AddTransactionModal({
     setIsSubmitting(true);
     try {
       onSubmit({
+        id: transactionToEdit?.id,
         personId,
         type,
         amount: parseFloat(amount),
@@ -84,32 +100,34 @@ export function AddTransactionModal({
 
   const quickAmounts = [100, 250, 500, 1000, 2500, 5000];
 
+  const modalTitle = transactionToEdit ? 'Edit Transaction Details' : 'Record Transaction';
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Record Transaction" size="md">
+    <Modal isOpen={isOpen} onClose={onClose} title={modalTitle} size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Toggle: You Gave vs You Received */}
-        <div className="grid grid-cols-2 gap-2 p-1 bg-slate-900/90 rounded-xl border border-slate-800">
+        {/* Toggle: You Gave vs You Got */}
+        <div className="grid grid-cols-2 gap-2 p-1 bg-neutral-100 dark:bg-[#0c140f] rounded-xl border border-neutral-200 dark:border-[#16251c]">
           <button
             type="button"
             onClick={() => setType('given')}
-            className={`py-2.5 px-4 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+            className={`py-2.5 px-4 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
               type === 'given'
-                ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/25 border border-rose-500'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-neutral-950 border border-emerald-500 dark:border-emerald-400 shadow-sm shadow-emerald-500/20'
+                : 'text-neutral-500 dark:text-neutral-400 hover:text-emerald-600 dark:hover:text-emerald-400'
             }`}
           >
-            <ArrowUpRight className="w-4 h-4" /> You Gave (Outflow)
+            <ArrowUpRight className="w-4 h-4 stroke-[2.5]" /> You Gave (Outflow)
           </button>
           <button
             type="button"
             onClick={() => setType('received')}
-            className={`py-2.5 px-4 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+            className={`py-2.5 px-4 rounded-lg text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
               type === 'received'
-                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25 border border-emerald-500'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-neutral-800 text-white dark:bg-neutral-200 dark:text-neutral-950 border border-neutral-700 dark:border-neutral-300 shadow-sm'
+                : 'text-neutral-500 dark:text-neutral-400 hover:text-emerald-600 dark:hover:text-emerald-400'
             }`}
           >
-            <ArrowDownLeft className="w-4 h-4" /> You Got (Inflow)
+            <ArrowDownLeft className="w-4 h-4 stroke-[2.5]" /> You Got (Inflow)
           </button>
         </div>
 
@@ -126,7 +144,7 @@ export function AddTransactionModal({
         {/* Amount Input with Quick Chips */}
         <div>
           <Input
-            label="Amount (₹)"
+            label={`Amount (${currency.symbol})`}
             type="number"
             step="0.01"
             min="0.01"
@@ -135,20 +153,20 @@ export function AddTransactionModal({
             onChange={e => setAmount(e.target.value)}
             error={errors.amount}
             required
-            icon={<IndianRupee className="w-4 h-4 text-slate-400" />}
+            icon={<span className="font-extrabold text-xs text-emerald-600 dark:text-emerald-400">{currency.symbol}</span>}
           />
 
           {/* Quick Amount Chips */}
           <div className="flex items-center gap-1.5 mt-2 overflow-x-auto pb-1">
-            <span className="text-[10px] uppercase font-bold text-slate-500 mr-1">Quick:</span>
+            <span className="text-[10px] uppercase font-black text-emerald-700/60 dark:text-emerald-400/60 mr-1">Quick:</span>
             {quickAmounts.map(val => (
               <button
                 key={val}
                 type="button"
                 onClick={() => setAmount(val.toString())}
-                className="px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:border-indigo-500/50 hover:text-indigo-300 text-xs font-medium transition-all"
+                className="px-2.5 py-1 rounded-lg bg-white dark:bg-[#0c140f] border border-neutral-200 dark:border-[#16251c] text-neutral-800 dark:text-neutral-200 hover:border-emerald-500 dark:hover:border-emerald-400 hover:text-emerald-600 dark:hover:text-emerald-400 text-xs font-bold transition-all cursor-pointer"
               >
-                +₹{val}
+                +{currency.symbol}{val}
               </button>
             ))}
           </div>
@@ -169,11 +187,11 @@ export function AddTransactionModal({
         {/* Description Input */}
         <Input
           label="Description / Notes (Optional)"
-          placeholder="e.g. Lunch at Olive Bistro or GPay transfer"
+          placeholder="e.g. Lunch at Bistro or UPI transfer"
           value={description}
           onChange={e => setDescription(e.target.value)}
           maxLength={100}
-          icon={<FileText className="w-4 h-4 text-slate-400" />}
+          icon={<FileText className="w-4 h-4 text-emerald-600/70 dark:text-emerald-400/70" />}
         />
 
         {/* Date Selection */}
@@ -184,16 +202,24 @@ export function AddTransactionModal({
           onChange={e => setDate(e.target.value)}
           max={new Date().toISOString().split('T')[0]}
           required
-          icon={<Calendar className="w-4 h-4 text-slate-400" />}
+          icon={<Calendar className="w-4 h-4 text-emerald-600/70 dark:text-emerald-400/70" />}
         />
 
         {/* Action Buttons */}
-        <div className="flex gap-3 pt-3 border-t border-slate-800">
+        <div className="flex gap-3 pt-3 border-t border-neutral-200 dark:border-[#16251c]">
           <Button type="button" variant="ghost" onClick={onClose} className="flex-1" disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button type="submit" variant={type === 'given' ? 'danger' : 'success'} isLoading={isSubmitting} className="flex-1">
-            {type === 'given' ? 'Record Outflow (-)' : 'Record Inflow (+)'}
+          <Button type="submit" variant="primary" isLoading={isSubmitting} className="flex-1">
+            {transactionToEdit ? (
+              <>
+                <Pencil className="w-4 h-4" /> Save Changes
+              </>
+            ) : type === 'given' ? (
+              'Record Outflow (-)'
+            ) : (
+              'Record Inflow (+)'
+            )}
           </Button>
         </div>
       </form>

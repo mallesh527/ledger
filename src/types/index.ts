@@ -3,6 +3,8 @@ export interface Person {
   name: string;
   color: string;
   createdAt: number;
+  notes?: string;
+  phone?: string;
   transactions?: Transaction[];
   balance?: number;
 }
@@ -21,17 +23,20 @@ export interface Transaction {
 export interface AppState {
   people: Person[];
   transactions: Transaction[];
+  customCategories?: string[];
 }
 
 export type Action =
   | { type: 'ADD_PERSON'; payload: Omit<Person, 'id' | 'createdAt' | 'transactions' | 'balance'> }
   | { type: 'REMOVE_PERSON'; payload: string }
+  | { type: 'EDIT_PERSON'; payload: { id: string; name: string; color?: string; notes?: string; phone?: string } }
   | { type: 'ADD_TRANSACTION'; payload: Omit<Transaction, 'id' | 'createdAt'> }
   | { type: 'REMOVE_TRANSACTION'; payload: string }
+  | { type: 'EDIT_TRANSACTION'; payload: { id: string; personId: string; type: 'given' | 'received'; amount: number; category: string; description: string; date: string } }
   | { type: 'CLEAR_ALL' }
   | { type: 'LOAD_STATE'; payload: AppState };
 
-export const CATEGORIES = [
+export const DEFAULT_CATEGORIES = [
   'Food & Dining',
   'Rent & Utilities',
   'Shopping',
@@ -44,15 +49,18 @@ export const CATEGORIES = [
   'Other',
 ] as const;
 
+export const CATEGORIES = DEFAULT_CATEGORIES;
+
+/* Curated Emerald & Green Fintech Badge Gradients */
 export const PERSON_COLORS = [
-  'from-indigo-500 to-purple-600',
-  'from-cyan-500 to-blue-600',
-  'from-emerald-500 to-teal-600',
-  'from-amber-500 to-orange-600',
-  'from-rose-500 to-pink-600',
-  'from-violet-500 to-fuchsia-600',
-  'from-sky-500 to-indigo-600',
-  'from-lime-500 to-emerald-600',
+  'from-emerald-600 to-teal-900',
+  'from-emerald-700 to-emerald-950',
+  'from-teal-600 to-emerald-900',
+  'from-green-600 to-emerald-800',
+  'from-emerald-500 to-neutral-900',
+  'from-emerald-800 to-neutral-950',
+  'from-teal-700 to-neutral-900',
+  'from-green-700 to-neutral-950',
 ] as const;
 
 export function generateId(): string {
@@ -64,21 +72,25 @@ export function getRandomColor(usedColors: string[]): string {
   return available.length > 0 ? available[0] : PERSON_COLORS[Math.floor(Math.random() * PERSON_COLORS.length)];
 }
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+export function formatCurrency(amount: number, symbol = '₹'): string {
+  const absVal = Math.abs(amount);
+  try {
+    const formattedNumber = new Intl.NumberFormat('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(absVal);
+    return `${symbol}${formattedNumber}`;
+  } catch (_) {
+    return `${symbol}${absVal.toFixed(2)}`;
+  }
 }
 
 export const SAMPLE_DATA: AppState = {
   people: [
-    { id: 'p-1', name: 'Rahul Sharma', color: 'from-indigo-500 to-purple-600', createdAt: Date.now() - 86400000 * 5 },
-    { id: 'p-2', name: 'Ananya Verma', color: 'from-rose-500 to-pink-600', createdAt: Date.now() - 86400000 * 4 },
-    { id: 'p-3', name: 'Vikram Patel', color: 'from-emerald-500 to-teal-600', createdAt: Date.now() - 86400000 * 3 },
-    { id: 'p-4', name: 'Priya Sundaram', color: 'from-cyan-500 to-blue-600', createdAt: Date.now() - 86400000 * 2 },
+    { id: 'p-1', name: 'Rahul Sharma', color: 'from-emerald-600 to-teal-900', createdAt: Date.now() - 86400000 * 5, notes: 'College friend' },
+    { id: 'p-2', name: 'Ananya Verma', color: 'from-emerald-700 to-emerald-950', createdAt: Date.now() - 86400000 * 4, notes: 'Flatmate' },
+    { id: 'p-3', name: 'Vikram Patel', color: 'from-teal-600 to-emerald-900', createdAt: Date.now() - 86400000 * 3 },
+    { id: 'p-4', name: 'Priya Sundaram', color: 'from-green-600 to-emerald-800', createdAt: Date.now() - 86400000 * 2, notes: 'Colleague' },
   ],
   transactions: [
     {
@@ -87,7 +99,7 @@ export const SAMPLE_DATA: AppState = {
       type: 'given',
       amount: 1250,
       category: 'Food & Dining',
-      description: 'Dinner at Olive Bistro & drinks',
+      description: 'Dinner at Bistro & drinks',
       date: new Date(Date.now() - 86400000 * 2).toISOString().split('T')[0],
       createdAt: Date.now() - 86400000 * 2,
     },
@@ -97,7 +109,7 @@ export const SAMPLE_DATA: AppState = {
       type: 'given',
       amount: 450,
       category: 'Travel & Cabs',
-      description: 'Uber split to airport',
+      description: 'Cab split to airport',
       date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
       createdAt: Date.now() - 86400000,
     },

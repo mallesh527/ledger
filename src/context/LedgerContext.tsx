@@ -20,7 +20,6 @@ function getInitialSyncKey(): string {
   } catch (e) {
     console.error('Failed to load sync key:', e);
   }
-  // Generate a friendly sync key if none exists
   const newKey = `ledger-${Math.random().toString(36).slice(2, 8)}`;
   try {
     localStorage.setItem(SYNC_KEY_STORAGE, newKey);
@@ -79,6 +78,24 @@ function reducer(state: AppState, action: Action): AppState {
       break;
     }
 
+    case 'EDIT_PERSON': {
+      newState = {
+        ...state,
+        people: state.people.map(p =>
+          p.id === action.payload.id
+            ? {
+                ...p,
+                name: action.payload.name,
+                color: action.payload.color || p.color,
+                notes: action.payload.notes !== undefined ? action.payload.notes : p.notes,
+                phone: action.payload.phone !== undefined ? action.payload.phone : p.phone,
+              }
+            : p
+        ),
+      };
+      break;
+    }
+
     case 'ADD_TRANSACTION': {
       const newTransaction: Transaction = {
         ...action.payload,
@@ -96,6 +113,26 @@ function reducer(state: AppState, action: Action): AppState {
       newState = {
         ...state,
         transactions: state.transactions.filter(t => t.id !== action.payload),
+      };
+      break;
+    }
+
+    case 'EDIT_TRANSACTION': {
+      newState = {
+        ...state,
+        transactions: state.transactions.map(t =>
+          t.id === action.payload.id
+            ? {
+                ...t,
+                personId: action.payload.personId,
+                type: action.payload.type,
+                amount: action.payload.amount,
+                category: action.payload.category,
+                description: action.payload.description,
+                date: action.payload.date,
+              }
+            : t
+        ),
       };
       break;
     }
@@ -125,8 +162,9 @@ interface LedgerContextValue {
   setSyncKey: (key: string) => void;
   isSynced: boolean;
   people: (Person & { transactions: Transaction[]; balance: number })[];
-  addPerson: (name: string) => void;
+  addPerson: (name: string, notes?: string, phone?: string) => void;
   removePerson: (id: string) => void;
+  editPerson: (id: string, name: string, color?: string, notes?: string, phone?: string) => void;
   addTransaction: (
     personId: string,
     type: 'given' | 'received',
@@ -136,9 +174,20 @@ interface LedgerContextValue {
     date: string
   ) => void;
   removeTransaction: (personId: string, transactionId: string) => void;
+  editTransaction: (
+    id: string,
+    personId: string,
+    type: 'given' | 'received',
+    amount: number,
+    category: string,
+    description: string,
+    date: string
+  ) => void;
   clearAll: () => void;
   loadSampleData: () => void;
   exportCSV: () => void;
+  exportJSON: () => void;
+  importJSON: (jsonData: string) => boolean;
   getPersonById: (id: string) => (Person & { transactions: Transaction[]; balance: number }) | undefined;
 }
 
@@ -149,7 +198,6 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
   const [syncKey, setSyncKeyInternal] = useState<string>(getInitialSyncKey);
   const [isSynced, setIsSynced] = useState<boolean>(false);
 
-  // Function to change sync key
   const setSyncKey = (key: string) => {
     const trimmed = key.trim().toLowerCase();
     if (!trimmed) return;
@@ -159,11 +207,9 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
     } catch (_) {}
   };
 
-  // Real-time Firebase Firestore Sync Listener
   useEffect(() => {
     if (!syncKey) return;
 
-    // First push current local state to cloud if it has data
     if (state.people.length > 0 || state.transactions.length > 0) {
       pushLedgerToCloud(syncKey, state);
     }
@@ -184,26 +230,31 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
     };
   }, [syncKey]);
 
-  // Helper function to dispatch and sync to cloud
   const dispatchAndCloudSync = (action: Action) => {
     dispatch(action);
-    // Determine target state and push to Firebase cloud
     setTimeout(() => {
       const currentState = loadState();
       pushLedgerToCloud(syncKey, currentState);
     }, 50);
   };
 
-  const addPerson = (name: string) => {
+  const addPerson = (name: string, notes?: string, phone?: string) => {
     const usedColors = state.people.map(p => p.color);
     dispatchAndCloudSync({
       type: 'ADD_PERSON',
-      payload: { name, color: getRandomColor(usedColors) },
+      payload: { name, color: getRandomColor(usedColors), notes, phone },
     });
   };
 
   const removePerson = (id: string) => {
     dispatchAndCloudSync({ type: 'REMOVE_PERSON', payload: id });
+  };
+
+  const editPerson = (id: string, name: string, color?: string, notes?: string, phone?: string) => {
+    dispatchAndCloudSync({
+      type: 'EDIT_PERSON',
+      payload: { id, name, color, notes, phone },
+    });
   };
 
   const addTransaction = (
@@ -224,6 +275,21 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
     dispatchAndCloudSync({ type: 'REMOVE_TRANSACTION', payload: transactionId });
   };
 
+  const editTransaction = (
+    id: string,
+    personId: string,
+    type: 'given' | 'received',
+    amount: number,
+    category: string,
+    description: string,
+    date: string
+  ) => {
+    dispatchAndCloudSync({
+      type: 'EDIT_TRANSACTION',
+      payload: { id, personId, type, amount, category, description, date },
+    });
+  };
+
   const clearAll = () => {
     dispatchAndCloudSync({ type: 'CLEAR_ALL' });
   };
@@ -233,7 +299,7 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
   };
 
   const exportCSV = () => {
-    const headers = ['Person', 'Type', 'Amount (INR)', 'Category', 'Description', 'Date'];
+    const headers = ['Person', 'Type', 'Amount', 'Category', 'Description', 'Date'];
     const rows = state.transactions.map(t => {
       const person = state.people.find(p => p.id === t.personId);
       return [
@@ -250,13 +316,38 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `ledger_transactions_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `ledger_export_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  // Pre-compute people with transactions and balance
+  const exportJSON = () => {
+    const jsonString = JSON.stringify(state, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const href = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = href;
+    link.download = `ledger_backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(href);
+  };
+
+  const importJSON = (jsonData: string): boolean => {
+    try {
+      const parsed = JSON.parse(jsonData);
+      if (parsed && Array.isArray(parsed.people) && Array.isArray(parsed.transactions)) {
+        dispatchAndCloudSync({ type: 'LOAD_STATE', payload: parsed });
+        return true;
+      }
+    } catch (e) {
+      console.error('Import JSON error:', e);
+    }
+    return false;
+  };
+
   const peopleWithData = state.people.map(person => {
     const personTransactions = state.transactions.filter(t => t.personId === person.id);
     const given = personTransactions
@@ -287,11 +378,15 @@ export function LedgerProvider({ children }: { children: ReactNode }) {
         people: peopleWithData,
         addPerson,
         removePerson,
+        editPerson,
         addTransaction,
         removeTransaction,
+        editTransaction,
         clearAll,
         loadSampleData,
         exportCSV,
+        exportJSON,
+        importJSON,
         getPersonById,
       }}
     >

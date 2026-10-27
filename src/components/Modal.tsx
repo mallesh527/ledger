@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from './UI';
-import { X, CheckCircle2, AlertTriangle, Info, AlertOctagon } from 'lucide-react';
+import { X, CheckCircle2, AlertOctagon } from 'lucide-react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -52,7 +52,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', showClose
   return createPortal(
     <Fragment>
       <div
-        className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 transition-opacity duration-200 animate-fade-in"
+        className="fixed inset-0 bg-black/60 dark:bg-black/85 backdrop-blur-xs z-50 transition-opacity duration-150 animate-fade-in"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -65,17 +65,17 @@ export function Modal({ isOpen, onClose, title, children, size = 'md', showClose
         aria-labelledby="modal-title"
       >
         <div
-          className={`${sizes[size]} w-full glass-modal rounded-2xl shadow-2xl border border-slate-700/80 my-8 overflow-hidden transform transition-all animate-scale-up`}
+          className={`${sizes[size]} w-full glass-modal rounded-2xl shadow-2xl border border-neutral-300 dark:border-[#16251c] my-8 overflow-hidden transform transition-all animate-scale-up`}
           onClick={e => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/50">
-            <h2 id="modal-title" className="text-lg font-bold text-slate-100 tracking-tight">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200 dark:border-[#16251c] bg-neutral-50 dark:bg-[#090e0b]">
+            <h2 id="modal-title" className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight uppercase flex items-center gap-2">
               {title}
             </h2>
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
+                className="p-1.5 rounded-xl text-neutral-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer"
                 aria-label="Close modal"
               >
                 <X className="w-5 h-5" />
@@ -119,17 +119,17 @@ export function ConfirmDialog({
 
   return createPortal(
     <Fragment>
-      <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50" onClick={onClose} aria-hidden="true" />
+      <div className="fixed inset-0 bg-black/60 dark:bg-black/85 backdrop-blur-xs z-50" onClick={onClose} aria-hidden="true" />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <div className="w-full max-w-md glass-modal rounded-2xl border border-slate-700/80 shadow-2xl p-6">
-          <div className="flex items-center gap-3 text-rose-400 mb-3">
-            <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20">
+        <div className="w-full max-w-md glass-modal rounded-2xl border border-neutral-300 dark:border-[#16251c] shadow-2xl p-6">
+          <div className="flex items-center gap-3 text-neutral-900 dark:text-neutral-100 mb-3">
+            <div className="p-2 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-500">
               <AlertOctagon className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-bold text-slate-100">{title}</h3>
+            <h3 className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">{title}</h3>
           </div>
-          <p className="text-sm text-slate-300 mb-6 leading-relaxed">{message}</p>
-          <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+          <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6 leading-relaxed">{message}</p>
+          <div className="flex justify-end gap-3 pt-3 border-t border-neutral-200 dark:border-[#16251c]">
             <Button variant="ghost" size="sm" onClick={onClose} disabled={isLoading}>
               {cancelText}
             </Button>
@@ -150,32 +150,20 @@ interface ToastProps {
   onClose: () => void;
 }
 
-export function Toast({ message, type = 'info', onClose }: ToastProps) {
+export function Toast({ message, onClose }: ToastProps) {
   useEffect(() => {
     const timer = setTimeout(onClose, 3000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  const icons = {
-    success: <CheckCircle2 className="w-5 h-5 text-emerald-400" />,
-    error: <AlertTriangle className="w-5 h-5 text-rose-400" />,
-    info: <Info className="w-5 h-5 text-indigo-400" />,
-  };
-
-  const borderStyle = {
-    success: 'border-emerald-500/30 bg-slate-900/95 text-emerald-300',
-    error: 'border-rose-500/30 bg-slate-900/95 text-rose-300',
-    info: 'border-indigo-500/30 bg-slate-900/95 text-indigo-300',
-  };
-
   return (
     <div
-      className={`glass-card border px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 max-w-sm border-slate-700 ${borderStyle[type]}`}
+      className="bg-neutral-900 text-white dark:bg-[#0c140f] dark:text-neutral-100 border border-emerald-500/50 px-4 py-3 rounded-xl shadow-2xl shadow-emerald-500/15 flex items-center gap-3 max-w-sm"
       role="alert"
     >
-      {icons[type]}
-      <p className="text-xs font-semibold text-slate-100 flex-1">{message}</p>
-      <button onClick={onClose} className="text-slate-400 hover:text-slate-200">
+      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+      <p className="text-xs font-bold flex-1">{message}</p>
+      <button onClick={onClose} className="opacity-70 hover:opacity-100 hover:text-emerald-400 cursor-pointer">
         <X className="w-4 h-4" />
       </button>
     </div>

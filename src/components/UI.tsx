@@ -10,18 +10,18 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ children, variant = 'primary', size = 'md', isLoading, className = '', disabled, ...props }, ref) => {
     const baseStyles = `
-      inline-flex items-center justify-center font-medium rounded-xl
-      transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-950
-      disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] cursor-pointer
+      inline-flex items-center justify-center font-bold rounded-xl
+      transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 focus:ring-offset-2 dark:focus:ring-offset-[#060907]
+      disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] cursor-pointer tracking-tight
     `;
 
     const variants = {
-      primary: 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:from-indigo-500 hover:to-violet-500 shadow-lg shadow-indigo-600/25 border border-indigo-500/30 focus:ring-indigo-500',
-      secondary: 'bg-slate-800/80 text-slate-200 hover:bg-slate-700/80 border border-slate-700/80 hover:border-slate-600 focus:ring-slate-500',
-      outline: 'bg-transparent text-slate-300 hover:text-white border border-slate-700 hover:border-indigo-500 hover:bg-indigo-500/10 focus:ring-indigo-500',
-      success: 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/20 border border-emerald-500/30 focus:ring-emerald-500',
-      danger: 'bg-gradient-to-r from-rose-600 to-red-600 text-white hover:from-rose-500 hover:to-red-500 shadow-lg shadow-rose-600/20 border border-rose-500/30 focus:ring-rose-500',
-      ghost: 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 focus:ring-slate-500',
+      primary: 'bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-emerald-500 dark:text-neutral-950 dark:hover:bg-emerald-400 border border-emerald-500 dark:border-emerald-400 shadow-md shadow-emerald-600/20 dark:shadow-emerald-500/20',
+      secondary: 'bg-neutral-100 text-neutral-900 hover:bg-neutral-200 dark:bg-[#0e1611] dark:text-neutral-100 dark:hover:bg-[#15231c] border border-neutral-200 dark:border-[#1d3326]',
+      outline: 'bg-transparent text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:border-emerald-500 dark:hover:border-emerald-500',
+      success: 'bg-emerald-600 hover:bg-emerald-500 text-white dark:bg-emerald-500 dark:text-neutral-950 dark:hover:bg-emerald-400 border border-emerald-500',
+      danger: 'bg-neutral-800 text-rose-400 hover:bg-neutral-900 border border-neutral-700 hover:border-rose-800',
+      ghost: 'text-neutral-600 dark:text-neutral-400 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30',
     };
 
     const sizes = {
@@ -61,13 +61,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={inputId} className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+          <label htmlFor={inputId} className="block text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 mb-1.5">
             {label}
           </label>
         )}
         <div className="relative">
           {icon && (
-            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-emerald-600/70 dark:text-emerald-400/70">
               {icon}
             </div>
           )}
@@ -75,11 +75,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={`
-              w-full ${icon ? 'pl-10' : 'px-3.5'} py-2.5 border rounded-xl bg-slate-900/90
-              text-slate-100 placeholder-slate-500 text-sm
-              focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
-              transition-all duration-200
-              ${error ? 'border-rose-500/80 focus:ring-rose-500' : 'border-slate-800 hover:border-slate-700'}
+              w-full ${icon ? 'pl-10' : 'px-3.5'} py-2.5 border rounded-xl bg-white dark:bg-[#0c140f]
+              text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-600 text-sm
+              focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 focus:border-emerald-500 dark:focus:border-emerald-400
+              transition-all duration-150
+              ${error ? 'border-rose-500 dark:border-rose-500 focus:ring-rose-500' : 'border-neutral-200 dark:border-[#1d3326] hover:border-emerald-300 dark:hover:border-emerald-700/60'}
               ${className}
             `}
             aria-invalid={error ? 'true' : 'false'}
@@ -88,12 +88,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           />
         </div>
         {error && (
-          <p id={`${inputId}-error`} className="mt-1.5 text-xs font-medium text-rose-400" role="alert">
+          <p id={`${inputId}-error`} className="mt-1.5 text-xs font-bold text-rose-600 dark:text-rose-400" role="alert">
             {error}
           </p>
         )}
         {helperText && !error && (
-          <p id={`${inputId}-helper`} className="mt-1 text-xs text-slate-500">
+          <p id={`${inputId}-helper`} className="mt-1 text-xs text-neutral-500">
             {helperText}
           </p>
         )}
@@ -117,7 +117,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={selectId} className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+          <label htmlFor={selectId} className="block text-xs font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400 mb-1.5">
             {label}
           </label>
         )}
@@ -125,24 +125,24 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           ref={ref}
           id={selectId}
           className={`
-            w-full px-3.5 py-2.5 border rounded-xl bg-slate-900/90
-            text-slate-100 text-sm
-            focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500
-            transition-all duration-200 cursor-pointer
-            ${error ? 'border-rose-500/80 focus:ring-rose-500' : 'border-slate-800 hover:border-slate-700'}
+            w-full px-3.5 py-2.5 border rounded-xl bg-white dark:bg-[#0c140f]
+            text-neutral-900 dark:text-neutral-100 text-sm font-medium
+            focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 focus:border-emerald-500 dark:focus:border-emerald-400
+            transition-all duration-150 cursor-pointer
+            ${error ? 'border-rose-500 dark:border-rose-500 focus:ring-rose-500' : 'border-neutral-200 dark:border-[#1d3326] hover:border-emerald-300 dark:hover:border-emerald-700/60'}
             ${className}
           `}
           aria-invalid={error ? 'true' : 'false'}
           {...props}
         >
           {options.map(opt => (
-            <option key={opt.value} value={opt.value} className="bg-slate-900 text-slate-100">
+            <option key={opt.value} value={opt.value} className="bg-white dark:bg-[#0c140f] text-neutral-900 dark:text-neutral-100">
               {opt.label}
             </option>
           ))}
         </select>
         {error && (
-          <p className="mt-1 text-xs font-medium text-rose-400" role="alert">
+          <p className="mt-1 text-xs font-bold text-rose-600 dark:text-rose-400" role="alert">
             {error}
           </p>
         )}
